@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
 class User(BaseModel):
-    id: str | None 
+    id: str
     username: str
     email: str

@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, APIRouter, status
 from pydantic import BaseModel
 from db.models.user import User
 from db.client import db_cliente
-from db.schemas import user_schema
+from db.schemas.user import user_schema
 
 router = APIRouter(prefix="/userdb", 
                    tags=["userdb"],
@@ -16,7 +16,7 @@ users_list = []
 
 @router.get("/")
 async def users():
-    return users_list
+    return db_cliente.local.users.find()
 
 # Path
 @router.get("/{id}")
@@ -28,19 +28,18 @@ async def users(id: int):
     #     return list(user)[0]
     # except:
     #     return {"error":"No se ha encontrado el usuario"}
-    return searchuser(id)
+    return search_user(id)
     
 # Parámetros por query -> URL: userquery/?id=1
 @router.get("/")
 async def user(id: int, name: str):
-    return searchuser(id, name)
+    return search_user(id)
 
 # POST
 @router.post("/",response_model=User, status_code=201)
 async def user(user: User):
-    # # Hacer comprobación
-    # if type(searchuser(user.id, user.name)) == User:
-    #     raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail="El usuario ya existe")
+    if type(searchuser_by_email(user.email)) == User:
+        raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail="El usuario ya existe")
     
     # Si lo inserto directamente, el id aparece como null
     user_dict = dict(user)
@@ -84,12 +83,12 @@ async def user(id: int):
     if not found:
         return {"message":"No se ha eliminado el usuario"}
     
-def searchuser(id: int, name: str):
-    # Filter devuelve un objeto
-    user = filter(lambda user: user.id == id and user.name == name, users_list)
+def searchuser_by_email(email: str):
     try:
-        # Esto me permite que no me devuelva una lista
-        return list(user)[0]
+        user = db_cliente.local.users.find_one({"email":email})
+        return User(**user_schema(user))
     except:
         return {"error":"No se ha encontrado el usuario"}
 
+def search_user(id: str):
+    return ""
