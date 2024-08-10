@@ -2,7 +2,8 @@ from fastapi import FastAPI, HTTPException, APIRouter, status
 from pydantic import BaseModel
 from db.models.user import User
 from db.client import db_cliente
-from db.schemas.user import user_schema
+from db.schemas.user import user_schema, users_schema
+from bson import ObjectId
 
 router = APIRouter(prefix="/userdb", 
                    tags=["userdb"],
@@ -14,31 +15,26 @@ router = APIRouter(prefix="/userdb",
 users_list = []
 
 
-@router.get("/")
+@router.get("/", response_model = (list[User]))
 async def users():
-    return db_cliente.local.users.find()
+    return users_schema(db_cliente.local.users.find())
 
 # Path
 @router.get("/{id}")
 async def users(id: int):
-    # # Filter devuelve un objeto
-    # user = filter(lambda user: user.id == id, users_list)
-    # try:
-    #     # Esto me permite que no me devuelva una lista
-    #     return list(user)[0]
-    # except:
-    #     return {"error":"No se ha encontrado el usuario"}
-    return search_user(id)
+    found = db_cliente.local.users
+
+    return search_user("_id", ObjectId(id))
     
 # Parámetros por query -> URL: userquery/?id=1
 @router.get("/")
 async def user(id: int, name: str):
-    return search_user(id)
+    return search_user("_id", ObjectId(id))
 
 # POST
 @router.post("/",response_model=User, status_code=201)
 async def user(user: User):
-    if type(searchuser_by_email(user.email)) == User:
+    if type(search_user("email", id)) == User:
         raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail="El usuario ya existe")
     
     # Si lo inserto directamente, el id aparece como null
@@ -83,7 +79,7 @@ async def user(id: int):
     if not found:
         return {"message":"No se ha eliminado el usuario"}
     
-def searchuser_by_email(email: str):
+def search_user(field: str, key: str):
     try:
         user = db_cliente.local.users.find_one({"email":email})
         return User(**user_schema(user))

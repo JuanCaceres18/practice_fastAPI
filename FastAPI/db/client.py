@@ -1,3 +1,3 @@
 from pymongo import MongoClient
 
-db_cliente = MongoClient(port=)
+db_cliente = MongoClient()
