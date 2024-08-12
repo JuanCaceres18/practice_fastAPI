@@ -24,12 +24,12 @@ async def userjson():
             {"name":"Pablo", "surname":"Moure", "url":"https://www.pablomoure.dev", "age":19}
             ]
 
-@router.get("/usersdb")
+@router.get("/users")
 async def users():
     return users_list
 
 # Path
-@router.get("/usersdb/{id}")
+@router.get("/users/{id}")
 async def users(id: int):
     # Filter devuelve un objeto
     user = filter(lambda user: user.id == id, users_list)
@@ -45,7 +45,7 @@ async def user(id: int, name: str):
     return searchuser(id, name)
 
 # POST
-@router.post("/userdb/",response_model=User, status_code=201)
+@router.post("/user/",response_model=User, status_code=201)
 async def user(user: User):
     # Hacer comprobación
     if type(searchuser(user.id, user.name)) == User:
@@ -54,7 +54,7 @@ async def user(user: User):
     users_list.append(user)
     return user
 
-@router.put("/userdb/")
+@router.put("/user/")
 async def user(user: User):
 
     found = False
@@ -71,7 +71,7 @@ async def user(user: User):
     return user
 
 # DELETE
-@router.delete("/userdb/{id}")
+@router.delete("/user/{id}")
 async def user(id: int):
 
     found = False

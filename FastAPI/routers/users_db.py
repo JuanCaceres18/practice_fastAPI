@@ -4,6 +4,7 @@ from db.models.user import User
 from db.client import db_cliente
 from db.schemas.user import user_schema, users_schema
 from bson import ObjectId
+from typing import List
 
 router = APIRouter(prefix="/userdb", 
                    tags=["userdb"],
@@ -15,7 +16,7 @@ router = APIRouter(prefix="/userdb",
 users_list = []
 
 
-@router.get("/", response_model = (list[User]))
+@router.get("/", response_model=List[User])
 async def users():
     return users_schema(db_cliente.local.users.find())
 
@@ -49,32 +50,24 @@ async def user(user: User):
     
     return User(**new_user)
 
-@router.put("/")
+@router.put("/", response_model=User)
 async def user(user: User):
-
-    found = False
-
-    for index, saved_user in enumerate(users_list):
-        # Si la id coincide, se actualiza al usuario.
-        if saved_user.id == user.id:
-            users_list[index] = user
-            found = True
     
-    if not found:
+    user_dict = dict(user)
+    del user_dict["id"]
+
+    try:
+        db_cliente.local.users.find_one_and_replace({"_id":ObjectId(user.id)}, user_dict)
+    except:
         return {"error":"No se ha actualizado el usuario"}
 
-    return user
+    return search_user({"_id":ObjectId(id)})
 
 # DELETE
-@router.delete("/{id}")
-async def user(id: int):
+@router.delete("/{id}", status_code = status.HTTP_204_NO_CONTENT)
+async def user(id: str):
 
-    found = False
-
-    for index, saved_user in enumerate(users_list):
-        if saved_user.id == id:
-            del users_list[index]
-            found = True
+    found = db_cliente.local.users.find_one_and_delete({"_id":ObjectId(id)})
     
     if not found:
         return {"message":"No se ha eliminado el usuario"}
