@@ -22,21 +22,21 @@ async def users():
 
 # Path
 @router.get("/{id}")
-async def users(id: int):
+async def users(id: str):
     found = db_cliente.local.users
 
     return search_user("_id", ObjectId(id))
     
 # Parámetros por query -> URL: userquery/?id=1
 @router.get("/")
-async def user(id: int, name: str):
+async def user(id: str):
     return search_user("_id", ObjectId(id))
 
 # POST
-@router.post("/",response_model=User, status_code=201)
+@router.post("/",response_model=User, status_code=status.HTTP_201_CREATED)
 async def user(user: User):
-    if type(search_user("email", id)) == User:
-        raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail="El usuario ya existe")
+    if type(search_user("email", user.email)) == User:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El usuario ya existe")
     
     # Si lo inserto directamente, el id aparece como null
     user_dict = dict(user)
@@ -70,14 +70,11 @@ async def user(id: str):
     found = db_cliente.local.users.find_one_and_delete({"_id":ObjectId(id)})
     
     if not found:
-        return {"message":"No se ha eliminado el usuario"}
+        return {"error":"No se ha eliminado el usuario"}
     
-def search_user(field: str, key: str):
+def search_user(field: str, key):
     try:
-        user = db_cliente.local.users.find_one({"email":email})
+        user = db_cliente.local.users.find_one({field:key})
         return User(**user_schema(user))
     except:
         return {"error":"No se ha encontrado el usuario"}
-
-def search_user(id: str):
-    return ""

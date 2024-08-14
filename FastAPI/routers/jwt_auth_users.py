@@ -9,7 +9,9 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_DURATION = 2
 SECRET = "2275411189690520dc48e9eeab05a90f1b0a790dff3c47470f8473a2a9615803"
 
-router = APIRouter()
+router = APIRouter(prefix="/jwtauth",
+                   tags=["jwtauth"],
+                   responses={status.HTTP_404_NOT_FOUND: {"message": "No encontrado"}})
 
 oauth2 = OAuth2PasswordBearer(tokenUrl="login")
 
@@ -48,7 +50,7 @@ def search_user_db(username: str):
 
 def search_user(username: str):
     if username in users_db:
-        return UserDB(**users_db[username])
+        return User(**users_db[username])
 
 async def auth_user(token: str = Depends(oauth2)):
     exception = HTTPException(
@@ -74,6 +76,8 @@ async def current_user(user: User = Depends(auth_user)):
             detail="Usuario inactivo"
         )
     
+    return user
+    
 @router.post("/login")
 async def login(form: OAuth2PasswordRequestForm = Depends()):
     # Voy a mi base de datos y busco mi usuario.
@@ -88,7 +92,7 @@ async def login(form: OAuth2PasswordRequestForm = Depends()):
     # Comprobamos si la contraseña es la correcta
     if not crypt.verify(form.password, user.password):
         raise HTTPException(
-            status_code=400, detail="La contraseña no es correcta"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="La contraseña no es correcta"
         )
 
     
