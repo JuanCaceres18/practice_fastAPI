@@ -18,12 +18,12 @@ users_list = []
 
 @router.get("/", response_model=List[User])
 async def users():
-    return users_schema(db_cliente.local.users.find())
+    return users_schema(db_cliente.users.find())
 
 # Path
 @router.get("/{id}")
 async def users(id: str):
-    found = db_cliente.local.users
+    found = db_cliente.users
 
     return search_user("_id", ObjectId(id))
     
@@ -43,10 +43,10 @@ async def user(user: User):
     
     del user_dict["id"]
 
-    id = db_cliente.local.users.insert_one(user_dict).inserted_id
+    id = db_cliente.users.insert_one(user_dict).inserted_id
     
     # El criterio de búsqueda es el id que acabamos de guardar.
-    new_user = user_schema(db_cliente.local.users.find_one({"_id": id}))
+    new_user = user_schema(db_cliente.users.find_one({"_id": id}))
     
     return User(**new_user)
 
@@ -57,7 +57,7 @@ async def user(user: User):
     del user_dict["id"]
 
     try:
-        db_cliente.local.users.find_one_and_replace({"_id":ObjectId(user.id)}, user_dict)
+        db_cliente.users.find_one_and_replace({"_id":ObjectId(user.id)}, user_dict)
     except:
         return {"error":"No se ha actualizado el usuario"}
 
@@ -67,14 +67,14 @@ async def user(user: User):
 @router.delete("/{id}", status_code = status.HTTP_204_NO_CONTENT)
 async def user(id: str):
 
-    found = db_cliente.local.users.find_one_and_delete({"_id":ObjectId(id)})
+    found = db_cliente.users.find_one_and_delete({"_id":ObjectId(id)})
     
     if not found:
         return {"error":"No se ha eliminado el usuario"}
     
 def search_user(field: str, key):
     try:
-        user = db_cliente.local.users.find_one({field:key})
+        user = db_cliente.users.find_one({field:key})
         return User(**user_schema(user))
     except:
         return {"error":"No se ha encontrado el usuario"}
